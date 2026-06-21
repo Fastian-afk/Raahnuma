@@ -391,6 +391,11 @@ body {
   }
 }
 
+/* Urdu / RTL font helper */
+.font-urdu {
+  font-family: var(--font-noto-naskh), 'Noto Naskh Arabic', serif;
+}
+
 /* Print-friendly styles */
 @media print {
   body { background: white; color: black; }
@@ -400,4 +405,6 @@ body {
     backdrop-filter: none;
   }
   .no-print { display: none !important; }
+  .print-result-card { break-inside: avoid; page-break-inside: avoid; }
+  #results-panel { overflow: visible !important; }
 }

@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import { useLanguage } from '@/lib/i18n/context';
 import { PROGRAMS } from '@/lib/rules-engine/programs';
-import { ProgramType } from '@/lib/rules-engine/types';
+import { Program, ProgramType } from '@/lib/rules-engine/types';
 import {
   Banknote, GraduationCap, HeartPulse, ShieldPlus, Package,
   Filter, Search, ChevronDown, ChevronUp, ExternalLink,
-  MessageSquare, Phone, Globe, MapPin, FileText, ArrowRight, Info
+  MessageSquare, Phone, Globe, MapPin, FileText, Info, GitCompare, X
 } from 'lucide-react';
 
 const PROGRAM_ICONS: Record<string, React.ReactNode> = {
@@ -32,7 +32,21 @@ export default function ProgramsPage() {
   const [filter, setFilter] = useState<ProgramType | 'all'>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
   const isEn = language === 'en';
+
+  const toggleCompare = (id: string) => {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) return prev.filter((p) => p !== id);
+      if (prev.length >= 3) return prev;
+      return [...prev, id];
+    });
+  };
+
+  const comparePrograms = compareIds
+    .map((id) => PROGRAMS.find((p) => p.id === id))
+    .filter(Boolean) as Program[];
 
   const filtered = PROGRAMS.filter(p => {
     if (filter !== 'all' && p.type !== filter) return false;
@@ -79,6 +93,105 @@ export default function ProgramsPage() {
           </div>
         </div>
 
+        {/* Compare bar */}
+        {compareIds.length > 0 && (
+          <div className="mb-6 p-4 rounded-xl glass border border-gold-500/20 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm text-sage-300">
+              <GitCompare className="w-4 h-4 text-gold-400" />
+              {compareIds.length} selected (max 3)
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCompare(true)}
+                disabled={compareIds.length < 2}
+                className="px-4 py-2 rounded-lg bg-gold-500/15 text-gold-400 text-sm font-medium disabled:opacity-40"
+              >
+                Compare Programs
+              </button>
+              <button
+                onClick={() => setCompareIds([])}
+                className="px-3 py-2 rounded-lg glass text-sage-500 text-sm"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showCompare && comparePrograms.length >= 2 && (
+          <div className="mb-8 glass rounded-2xl overflow-hidden border border-gold-500/20">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
+              <h2 className="font-bold text-cream flex items-center gap-2">
+                <GitCompare className="w-5 h-5 text-gold-400" /> Program Comparison
+              </h2>
+              <button onClick={() => setShowCompare(false)} className="text-sage-500 hover:text-cream">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border-subtle">
+                    <th className="text-left p-4 text-sage-400 font-medium">Feature</th>
+                    {comparePrograms.map((p) => (
+                      <th key={p.id} className="text-left p-4 text-cream font-bold min-w-[180px]">
+                        {isEn ? p.name.en : p.name.ur}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border-subtle">
+                    <td className="p-4 text-sage-400">Benefit</td>
+                    {comparePrograms.map((p) => (
+                      <td key={p.id} className="p-4 text-gold-400">
+                        {isEn ? p.benefit.en : p.benefit.ur}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border-subtle">
+                    <td className="p-4 text-sage-400">Type</td>
+                    {comparePrograms.map((p) => (
+                      <td key={p.id} className="p-4 text-sage-300 capitalize">
+                        {p.type.replace('_', ' ')}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border-subtle">
+                    <td className="p-4 text-sage-400">Dependencies</td>
+                    {comparePrograms.map((p) => (
+                      <td key={p.id} className="p-4 text-sage-300">
+                        {p.dependsOn?.join(', ') || 'None'}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border-subtle">
+                    <td className="p-4 text-sage-400">Registration</td>
+                    {comparePrograms.map((p) => (
+                      <td key={p.id} className="p-4 text-sage-300">
+                        {p.registrationChannels
+                          .map((ch) => ch.smsCode || ch.type)
+                          .slice(0, 2)
+                          .join(', ')}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-sage-400">Documents</td>
+                    {comparePrograms.map((p) => (
+                      <td key={p.id} className="p-4 text-sage-300">
+                        {(isEn ? p.requiredDocuments.en : p.requiredDocuments.ur)
+                          .slice(0, 3)
+                          .join('; ')}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Programs */}
         <div className="space-y-6">
           {filtered.map(program => {
@@ -107,6 +220,20 @@ export default function ProgramsPage() {
                     </div>
                     <button className="text-sage-500 shrink-0 mt-2">
                       {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCompare(program.id);
+                      }}
+                      className={`shrink-0 mt-2 p-2 rounded-lg text-xs ${
+                        compareIds.includes(program.id)
+                          ? 'bg-gold-500/20 text-gold-400'
+                          : 'glass text-sage-500 hover:text-gold-400'
+                      }`}
+                      title="Add to compare"
+                    >
+                      <GitCompare className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

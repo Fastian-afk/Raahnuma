@@ -1,14 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
+import ResultsPanel from '@/components/results/ResultsPanel';
 import { useLanguage } from '@/lib/i18n/context';
 import { evaluateEligibility } from '@/lib/rules-engine/evaluator';
 import { UserProfile, Province, EmploymentType, AssessmentResult } from '@/lib/rules-engine/types';
 import {
-  ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, XCircle,
-  HelpCircle, MapPin, Users, Briefcase, GraduationCap, Heart,
-  Accessibility, ArrowRight, RotateCcw, MessageCircle, Banknote,
-  HeartPulse, ShieldPlus, Package, FileText, ExternalLink, Phone, Globe, MessageSquare
+  ChevronLeft, MapPin, Users, Briefcase, GraduationCap, Heart,
+  ArrowRight, RotateCcw, MessageCircle, ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,24 +31,12 @@ const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
   { value: 'retired', label: 'Retired' },
 ];
 
-const STATUS_CONFIG = {
-  LIKELY_ELIGIBLE: { icon: <CheckCircle2 className="w-5 h-5" />, label: 'Likely Eligible', class: 'status-eligible', color: '#34D399' },
-  MAY_BE_ELIGIBLE: { icon: <AlertCircle className="w-5 h-5" />, label: 'May Be Eligible', class: 'status-maybe', color: '#FBBF24' },
-  LIKELY_NOT_ELIGIBLE: { icon: <XCircle className="w-5 h-5" />, label: 'Likely Not Eligible', class: 'status-unlikely', color: '#FB7185' },
-  INSUFFICIENT_DATA: { icon: <HelpCircle className="w-5 h-5" />, label: 'More Info Needed', class: 'status-maybe', color: '#94A3B8' },
-};
-
-const PROGRAM_ICONS: Record<string, React.ReactNode> = {
-  kafaalat: <Banknote className="w-5 h-5" />, taleemi_wazaif: <GraduationCap className="w-5 h-5" />,
-  nashonuma: <HeartPulse className="w-5 h-5" />, sehat_sahulat: <ShieldPlus className="w-5 h-5" />,
-  ramzan_relief: <Package className="w-5 h-5" />,
-};
-
 const STEPS = [
   { id: 'province', icon: <MapPin className="w-5 h-5" /> },
   { id: 'household', icon: <Users className="w-5 h-5" /> },
   { id: 'income', icon: <Briefcase className="w-5 h-5" /> },
   { id: 'children', icon: <GraduationCap className="w-5 h-5" /> },
+  { id: 'kafaalat', icon: <ShieldCheck className="w-5 h-5" /> },
   { id: 'health', icon: <Heart className="w-5 h-5" /> },
 ];
 
@@ -71,70 +58,32 @@ export default function CheckerPage() {
     return (
       <AppShell>
         <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 no-print">
             <div>
-              <h1 className="text-3xl font-bold text-cream">Your Results</h1>
-              <p className="text-sage-400 mt-1">Based on the information you provided</p>
+              <h1 className="text-3xl font-bold text-cream">
+                {isEn ? 'Your Results' : 'آپ کے نتائج'}
+              </h1>
+              <p className="text-sage-400 mt-1">
+                {isEn ? 'Based on the information you provided' : 'آپ کی فراہم کردہ معلومات کی بنیاد پر'}
+              </p>
             </div>
             <div className="flex gap-3">
-              <button onClick={reset} className="flex items-center gap-2 px-4 py-2 rounded-xl glass text-sage-400 hover:text-cream text-sm"><RotateCcw className="w-4 h-4" /> Start Over</button>
-              <Link href="/navigator" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 text-sm font-bold"><MessageCircle className="w-4 h-4" /> Talk to AI</Link>
+              <button
+                onClick={reset}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl glass text-sage-400 hover:text-cream text-sm"
+              >
+                <RotateCcw className="w-4 h-4" /> {isEn ? 'Start Over' : 'دوبارہ شروع'}
+              </button>
+              <Link
+                href="/navigator"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 text-sm font-bold"
+              >
+                <MessageCircle className="w-4 h-4" /> {isEn ? 'Talk to AI' : 'اے آئی سے بات کریں'}
+              </Link>
             </div>
           </div>
-
-          {/* Summary */}
-          <div className="glass-gold rounded-2xl p-6 mb-8">
-            <div className="grid grid-cols-3 gap-6 text-center">
-              <div><div className="text-3xl font-bold text-emerald-400">{results.likelyEligibleCount}</div><div className="text-sm text-sage-400">Likely Eligible</div></div>
-              <div><div className="text-3xl font-bold text-yellow-400">{results.mayBeEligibleCount}</div><div className="text-sm text-sage-400">May Be Eligible</div></div>
-              <div><div className="text-3xl font-bold text-sage-400">{results.totalProgramsChecked}</div><div className="text-sm text-sage-400">Programs Checked</div></div>
-            </div>
-          </div>
-
-          {/* Cross-program alerts */}
-          {results.crossProgramAlerts.en.length > 0 && (
-            <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 mb-6">
-              <h3 className="text-sm font-bold text-emerald-400 mb-2">🔗 Cross-Program Benefits</h3>
-              {results.crossProgramAlerts.en.map((a, i) => <p key={i} className="text-sm text-sage-300">{a}</p>)}
-            </div>
-          )}
-
-          {/* Result cards */}
-          <div className="space-y-4">
-            {results.results.map(r => {
-              const s = STATUS_CONFIG[r.status];
-              return (
-                <div key={r.programId} className="glass rounded-2xl p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${r.program.color}15`, color: r.program.color }}>{PROGRAM_ICONS[r.programId]}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg font-bold text-cream">{isEn ? r.program.name.en : r.program.name.ur}</h3>
-                        <span className={`text-xs px-3 py-1 rounded-full ${s.class}`}>{s.label}</span>
-                      </div>
-                      <p className="text-sm text-gold-400 mt-1">{isEn ? r.program.benefit.en : r.program.benefit.ur}</p>
-                      <p className="text-sm text-sage-400 mt-2">{isEn ? r.explanation.en : r.explanation.ur}</p>
-                      {r.provinceNote && <div className="mt-3 p-3 rounded-lg bg-gold-500/5 border border-gold-500/20"><p className="text-xs text-gold-400">⚠️ {isEn ? r.provinceNote.en : r.provinceNote.ur}</p></div>}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {r.program.registrationChannels.slice(0, 2).map((ch, i) => (
-                          <span key={i} className="text-xs px-3 py-1.5 rounded-lg glass text-sage-300 flex items-center gap-1.5">
-                            {ch.type === 'sms' && <><MessageSquare className="w-3 h-3" /> SMS {ch.smsCode}</>}
-                            {ch.type === 'helpline' && <><Phone className="w-3 h-3" /> {ch.phone}</>}
-                            {ch.type === 'web_portal' && <><Globe className="w-3 h-3" /> Online</>}
-                            {ch.type === 'in_person' && <><MapPin className="w-3 h-3" /> In Person</>}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Disclaimer */}
-          <div className="mt-8 p-4 rounded-xl bg-gold-500/5 border border-gold-500/20">
-            <p className="text-xs text-gold-400/80">⚠️ {results.disclaimer.en}</p>
+          <div className="glass rounded-2xl overflow-hidden">
+            <ResultsPanel results={results} className="max-h-none" />
           </div>
         </div>
       </AppShell>
@@ -236,27 +185,142 @@ export default function CheckerPage() {
             </div>
           )}
 
-          {/* Step 4: Health */}
+          {/* Step 4: Kafaalat beneficiary status */}
           {step === 4 && (
+            <div className="animate-fade-in-up">
+              <h2 className="text-xl font-bold text-cream mb-2">
+                {isEn
+                  ? 'Are you already a Benazir Kafaalat beneficiary?'
+                  : 'کیا آپ پہلے سے بے نظیر کفالت کے مستفید ہیں؟'}
+              </h2>
+              <p className="text-sm text-sage-400 mb-6">
+                {isEn
+                  ? 'Required for Taleemi Wazaif and Nashonuma eligibility checks.'
+                  : 'تعلیمی وظائف اور نشونuma کی اہلیت کے لیے ضروری ہے۔'}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    setProfile((prev) => ({ ...prev, isKafaalatBeneficiary: true }));
+                    setStep(5);
+                  }}
+                  className="p-6 rounded-xl text-center glass text-sage-400 hover:text-emerald-400 hover:bg-emerald-500/10"
+                >
+                  {isEn ? 'Yes' : 'ہاں'}
+                </button>
+                <button
+                  onClick={() => {
+                    setProfile((prev) => ({ ...prev, isKafaalatBeneficiary: false }));
+                    setStep(5);
+                  }}
+                  className="p-6 rounded-xl text-center glass text-sage-400 hover:text-cream"
+                >
+                  {isEn ? 'No / Not sure' : 'نہیں / یقین نہیں'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Health */}
+          {step === 5 && (
             <div className="animate-fade-in-up space-y-6">
-              <h2 className="text-xl font-bold text-cream">{t('checker.pregnant')}</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setProfile(prev => ({ ...prev, hasPregnantMember: true, hasChildrenUnder2: true }))}
-                  className={`p-4 rounded-xl text-center transition-all ${profile.hasPregnantMember ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' : 'glass text-sage-400 hover:text-cream'}`}>Yes</button>
-                <button onClick={() => setProfile(prev => ({ ...prev, hasPregnantMember: false, hasChildrenUnder2: false }))}
-                  className={`p-4 rounded-xl text-center transition-all ${profile.hasPregnantMember === false ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400' : 'glass text-sage-400 hover:text-cream'}`}>No</button>
+              <div>
+                <h2 className="text-xl font-bold text-cream mb-3">{t('checker.pregnant')}</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() =>
+                      setProfile((prev) => ({ ...prev, hasPregnantMember: true }))
+                    }
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasPregnantMember
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'Yes' : 'ہاں'}
+                  </button>
+                  <button
+                    onClick={() =>
+                      setProfile((prev) => ({ ...prev, hasPregnantMember: false }))
+                    }
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasPregnantMember === false
+                        ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'No' : 'نہیں'}
+                  </button>
+                </div>
               </div>
 
-              <h2 className="text-xl font-bold text-cream">{t('checker.disabled')}</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setProfile(prev => ({ ...prev, hasDisabledMember: true }))}
-                  className={`p-4 rounded-xl text-center transition-all ${profile.hasDisabledMember ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' : 'glass text-sage-400 hover:text-cream'}`}>Yes</button>
-                <button onClick={() => setProfile(prev => ({ ...prev, hasDisabledMember: false }))}
-                  className={`p-4 rounded-xl text-center transition-all ${profile.hasDisabledMember === false ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400' : 'glass text-sage-400 hover:text-cream'}`}>No</button>
+              <div>
+                <h2 className="text-xl font-bold text-cream mb-3">
+                  {isEn ? 'Any children under 2 years old?' : 'کیا 2 سال سے کم عمر بچے ہیں؟'}
+                </h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() =>
+                      setProfile((prev) => ({ ...prev, hasChildrenUnder2: true }))
+                    }
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasChildrenUnder2
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'Yes' : 'ہاں'}
+                  </button>
+                  <button
+                    onClick={() =>
+                      setProfile((prev) => ({ ...prev, hasChildrenUnder2: false }))
+                    }
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasChildrenUnder2 === false
+                        ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'No' : 'نہیں'}
+                  </button>
+                </div>
               </div>
 
-              <button onClick={handleSubmit}
-                className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-lg hover:from-gold-500 hover:to-gold-400 transition-all flex items-center justify-center gap-2">
+              <div>
+                <h2 className="text-xl font-bold text-cream mb-3">{t('checker.disabled')}</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setProfile((prev) => ({ ...prev, hasDisabledMember: true }))}
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasDisabledMember
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'Yes' : 'ہاں'}
+                  </button>
+                  <button
+                    onClick={() => setProfile((prev) => ({ ...prev, hasDisabledMember: false }))}
+                    className={`p-4 rounded-xl text-center transition-all ${
+                      profile.hasDisabledMember === false
+                        ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                        : 'glass text-sage-400 hover:text-cream'
+                    }`}
+                  >
+                    {isEn ? 'No' : 'نہیں'}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={
+                  profile.hasPregnantMember === undefined ||
+                  profile.hasChildrenUnder2 === undefined ||
+                  profile.hasDisabledMember === undefined
+                }
+                className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-lg hover:from-gold-500 hover:to-gold-400 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              >
                 {t('checker.submit')} <ArrowRight className="w-5 h-5" />
               </button>
             </div>
