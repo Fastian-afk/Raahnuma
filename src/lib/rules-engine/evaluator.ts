@@ -1,4 +1,4 @@
-import { UserProfile, EligibilityResult, EligibilityStatus, AssessmentResult, ConditionStatus } from './types';
+import { UserProfile, EligibilityResult, EligibilityStatus, AssessmentResult, ConditionStatus, Language, MultilingualText, MultilingualList } from './types';
 import { PROGRAMS, getProgramById } from './programs';
 
 function determineStatus(results: { status: ConditionStatus; weight: string }[]): { status: EligibilityStatus; confidence: number } {
@@ -10,18 +10,15 @@ function determineStatus(results: { status: ConditionStatus; weight: string }[])
   const requiredUnknown = required.filter(r => r.status === 'UNKNOWN').length;
   const strongMet = strong.filter(r => r.status === 'MET').length;
   
-  // If any required condition is UNMET → likely not eligible
   if (requiredUnmet > 0) {
     return { status: 'LIKELY_NOT_ELIGIBLE', confidence: 0.8 + (requiredUnmet / required.length) * 0.2 };
   }
   
-  // If all required conditions are MET
   if (requiredMet === required.length && required.length > 0) {
     const strongRatio = strong.length > 0 ? strongMet / strong.length : 1;
     return { status: 'LIKELY_ELIGIBLE', confidence: 0.7 + strongRatio * 0.3 };
   }
   
-  // If we have unknown required conditions
   if (requiredUnknown > 0) {
     const knownMet = requiredMet + strongMet;
     const total = required.length + strong.length;
@@ -34,7 +31,7 @@ function determineStatus(results: { status: ConditionStatus; weight: string }[])
   return { status: 'MAY_BE_ELIGIBLE', confidence: 0.5 };
 }
 
-function getProvinceNote(programId: string, province?: string): { en: string; ur: string } | undefined {
+function getProvinceNote(programId: string, province?: string): MultilingualText | undefined {
   const program = getProgramById(programId);
   if (!program?.provinceVariations || !province) return undefined;
   
@@ -46,9 +43,10 @@ function getProvinceNote(programId: string, province?: string): { en: string; ur
 
 export function evaluateEligibility(profile: UserProfile): AssessmentResult {
   const results: EligibilityResult[] = [];
-  const crossProgramAlerts: { en: string[]; ur: string[] } = { en: [], ur: [] };
+  const crossProgramAlerts: MultilingualList = {
+    en: [], ur: [], sd: [], ps: [], pn: [], bl: []
+  };
   
-  // First pass: evaluate all programs
   for (const program of PROGRAMS) {
     const conditionResults = program.eligibilityCriteria.map(criterion => ({
       criterion,
@@ -74,25 +72,37 @@ export function evaluateEligibility(profile: UserProfile): AssessmentResult {
     results.push(result);
   }
   
-  // Second pass: resolve cross-program dependencies
   for (const result of results) {
     if (result.program.dependsOn) {
       for (const depId of result.program.dependsOn) {
         const depResult = results.find(r => r.programId === depId);
         if (depResult) {
           if (depResult.status === 'LIKELY_ELIGIBLE' || depResult.status === 'MAY_BE_ELIGIBLE') {
-            // If parent program is likely/maybe, child might be unlocked
             if (result.status !== 'LIKELY_NOT_ELIGIBLE') {
               const depProgram = getProgramById(depId);
+              const names = depProgram?.name || { en: depId, ur: depId };
+              const currentNames = result.program.name;
+
               crossProgramAlerts.en.push(
-                `Because you may qualify for ${depProgram?.name.en || depId}, you may also be eligible for ${result.program.name.en}.`
+                `Because you may qualify for ${names.en}, you may also be eligible for ${currentNames.en}.`
               );
               crossProgramAlerts.ur.push(
-                `چونکہ آپ ${depProgram?.name.ur || depId} کے لیے اہل ہو سکتے ہیں، آپ ${result.program.name.ur} کے لیے بھی اہل ہو سکتے ہیں۔`
+                `چونکہ آپ ${names.ur} کے لیے اہل ہو سکتے ہیں، آپ ${currentNames.ur} کے لیے بھی اہل ہو سکتے ہیں۔`
+              );
+              crossProgramAlerts.sd!.push(
+                `ڇاڪاڻ ته توهان ${names.sd || names.ur} لاءِ اهل ٿي سگهو ٿا، توهان ${currentNames.sd || currentNames.ur} لاءِ پڻ اهل ٿي سگهو ٿا.`
+              );
+              crossProgramAlerts.ps!.push(
+                `ځکه چې تاسو ممکن د ${names.ps || names.ur} لپاره وړ یاست، تاسو د ${currentNames.ps || currentNames.ur} لپاره هم وړ کیدی شئ.`
+              );
+              crossProgramAlerts.pn!.push(
+                `کیونجے تسی ${names.pn || names.ur} لئی اہل ہو سکدے او، تسی ${currentNames.pn || currentNames.ur} لئی وی اہل ہو سکدے او۔`
+              );
+              crossProgramAlerts.bl!.push(
+                `پرچا شما ${names.bl || names.ur} واستہ لائق بوت کنائت، شما ${currentNames.bl || currentNames.ur} واستہ ہم لائق بوت کنائت۔`
               );
             }
           }
-          // Add unlock relationships
           if (depResult.unlocks) {
             depResult.unlocks.push(result.programId);
           }
@@ -101,7 +111,6 @@ export function evaluateEligibility(profile: UserProfile): AssessmentResult {
     }
   }
   
-  // Sort: likely eligible first, then maybe, then unlikely
   const statusOrder: Record<EligibilityStatus, number> = {
     'LIKELY_ELIGIBLE': 0,
     'MAY_BE_ELIGIBLE': 1,
@@ -120,7 +129,11 @@ export function evaluateEligibility(profile: UserProfile): AssessmentResult {
     timestamp: new Date().toISOString(),
     disclaimer: {
       en: 'Raahnuma provides guidance only — not official eligibility determination. Final eligibility is determined by BISP through the NSER Dynamic Survey and PMT scoring. Always verify through official channels (8171 SMS, BISP office) before making decisions based on these results.',
-      ur: 'رہنما صرف رہنمائی فراہم کرتا ہے — سرکاری اہلیت کا فیصلہ نہیں۔ حتمی اہلیت BISP کی NSER سروے اور PMT سکورنگ سے طے ہوتی ہے۔ ہمیشہ سرکاری ذرائع سے تصدیق کریں۔'
+      ur: 'رہنما صرف رہنمائی فراہم کرتا ہے — سرکاری اہلیت کا فیصلہ نہیں۔ حتمی اہلیت BISP کی NSER سروے اور PMT سکورنگ سے طے ہوتی ہے۔ ہمیشہ سرکاری ذرائع (8171 ایس ایم ایس یا بی آئی ایس پی دفتر) سے تصدیق کریں۔',
+      sd: 'رهنما صرف رهنمائي فراهم ڪري ٿو — سرڪاري فيصلو ناهي. هميشه سرڪاري ذريعن (8171 ايس ايم ايس يا BISP آفيس) مان تصديق ڪريو.',
+      ps: 'رهنما یوازې لارښود دی — رسمي وړتیا د BISP د NSER سروې او PMT نمرې له لارې ټاکل کیږي. تل له رسمي سرچینو څخه تصدیق کړئ.',
+      pn: 'راہنما صرف رہنمائی دیندا اے۔ اصل اہلیت دا فیصلہ NSER سروے تے PMT سکور توں ہوندا اے۔ ہمیشہ سرکاری ذرائع توں تصدیق کرو۔',
+      bl: 'رہنما صرف رہنمائی دنت — حتمی فیصلہ BISP ءِ NSER سروے ءَ چہ بیت۔ سرکاری ذرائع چہ تصدیق کن ات۔'
     }
   };
 }
@@ -128,49 +141,102 @@ export function evaluateEligibility(profile: UserProfile): AssessmentResult {
 function generateExplanation(
   programId: string,
   status: EligibilityStatus,
-  conditions: { criterion: { id: string; description: { en: string; ur: string } }; status: ConditionStatus }[],
+  conditions: { criterion: { id: string; description: MultilingualText }; status: ConditionStatus }[],
   profile: UserProfile
-): { en: string; ur: string } {
-  const met = conditions.filter(c => c.status === 'MET').map(c => c.criterion.description.en);
-  const unmet = conditions.filter(c => c.status === 'UNMET').map(c => c.criterion.description.en);
-  const unknown = conditions.filter(c => c.status === 'UNKNOWN').map(c => c.criterion.description.en);
-  
-  let en = '';
-  let ur = '';
-  
-  switch (status) {
-    case 'LIKELY_ELIGIBLE':
-      en = `Based on the information provided, you appear to meet the key eligibility criteria. ${met.length > 0 ? `Conditions met: ${met.join('; ')}.` : ''}`;
-      ur = `فراہم کردہ معلومات کی بنیاد پر، آپ اہلیت کے بنیادی معیار پر پورا اترتے نظر آتے ہیں۔`;
-      break;
-    case 'MAY_BE_ELIGIBLE':
-      en = `You may be eligible, but we need more information to be sure. ${met.length > 0 ? `Conditions met: ${met.join('; ')}.` : ''} ${unknown.length > 0 ? `Still need to verify: ${unknown.join('; ')}.` : ''}`;
-      ur = `آپ اہل ہو سکتے ہیں، لیکن مزید معلومات درکار ہیں۔`;
-      break;
-    case 'LIKELY_NOT_ELIGIBLE':
-      en = `Based on the information provided, you may not meet the eligibility criteria. ${unmet.length > 0 ? `Conditions not met: ${unmet.join('; ')}.` : ''}`;
-      ur = `فراہم کردہ معلومات کی بنیاد پر، آپ اہلیت کے معیار پر پورا نہیں اترتے۔`;
-      break;
-    case 'INSUFFICIENT_DATA':
-      en = `We don't have enough information to assess eligibility. ${unknown.length > 0 ? `We need to know: ${unknown.join('; ')}.` : ''}`;
-      ur = `اہلیت کا جائزہ لینے کے لیے کافی معلومات نہیں ہیں۔`;
-      break;
-  }
-  
-  // Add province-specific notes for Sehat Card
-  if (programId === 'sehat_sahulat' && profile.province) {
-    const provinceNames: Record<string, string> = {
-      punjab: 'Punjab', sindh: 'Sindh', kpk: 'KP', balochistan: 'Balochistan',
-      islamabad: 'Islamabad', ajk: 'AJK', gilgit_baltistan: 'Gilgit-Baltistan'
-    };
-    if (profile.province === 'punjab') {
-      en += ` ⚠️ Important: In ${provinceNames[profile.province]}, the Sehat Card currently works ONLY at private empaneled hospitals — not at government hospitals. Also, only IN-PATIENT treatment is covered (not OPD/routine checkups).`;
-    } else {
-      en += ` In ${provinceNames[profile.province]}, the Sehat Card covers treatment at both public and private empaneled hospitals. Note: only IN-PATIENT treatment is covered (not OPD/routine checkups).`;
+): MultilingualText {
+  const getLanguageExplanation = (lang: Language): string => {
+    const met = conditions.filter(c => c.status === 'MET').map(c => c.criterion.description[lang] || c.criterion.description.en);
+    const unmet = conditions.filter(c => c.status === 'UNMET').map(c => c.criterion.description[lang] || c.criterion.description.en);
+    const unknown = conditions.filter(c => c.status === 'UNKNOWN').map(c => c.criterion.description[lang] || c.criterion.description.en);
+    
+    let text = '';
+    const delimiter = lang === 'en' ? '; ' : '، ';
+    
+    switch (status) {
+      case 'LIKELY_ELIGIBLE':
+        if (lang === 'en') {
+          text = `Based on the information provided, you appear to meet the key eligibility criteria. ${met.length > 0 ? `Conditions met: ${met.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ur') {
+          text = `فراہم کردہ معلومات کی بنیاد پر، آپ اہلیت کے بنیادی معیار پر پورا اترتے نظر آتے ہیں۔ ${met.length > 0 ? `پورے کیے گئے شرائط: ${met.join(delimiter)}۔` : ''}`;
+        } else if (lang === 'sd') {
+          text = `فراهم ڪيل معلومات جي بنياد تي، توهان بنيادي معيارن تي پورا لهو ٿا. ${met.length > 0 ? `پورا ڪيل شرط: ${met.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ps') {
+          text = `د ورکړل شوي معلوماتو پراساس، داسې ښکاري چې تاسو د وړتیا معیارونه پوره کوئ. ${met.length > 0 ? `پوره شوي شرطونه: ${met.join(delimiter)}.` : ''}`;
+        } else if (lang === 'pn') {
+          text = `فراہم کیتی معلومات دی بنیاد تے، تسی اہلیت دے بنیادی معیاراں تے پورے اتردے او۔ ${met.length > 0 ? `پوریاں کیتیاں شرائط: ${met.join(delimiter)}۔` : ''}`;
+        } else {
+          text = `فراہم داتگیں معلوماتاں چہ پد، شما اہلیت ءِ درستیگیں معیاراں پوره کن ات۔ ${met.length > 0 ? `پوره کتگیں شرائط: ${met.join(delimiter)}۔` : ''}`;
+        }
+        break;
+      case 'MAY_BE_ELIGIBLE':
+        if (lang === 'en') {
+          text = `You may be eligible, but we need more information to be sure. ${met.length > 0 ? `Conditions met: ${met.join(delimiter)}.` : ''} ${unknown.length > 0 ? `Still need to verify: ${unknown.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ur') {
+          text = `آپ اہل ہو سکتے ہیں، لیکن تصدیق کے لیے مزید معلومات درکار ہیں۔ ${met.length > 0 ? `پورے کیے گئے شرائط: ${met.join(delimiter)}۔` : ''} ${unknown.length > 0 ? `تصدیق طلب شرائط: ${unknown.join(delimiter)}۔` : ''}`;
+        } else if (lang === 'sd') {
+          text = `توهان اهل ٿي سگهو ٿا، پر تصديق لاءِ وڌيڪ معلومات گهربل آهي. ${met.length > 0 ? `پورا ڪيل شرط: ${met.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ps') {
+          text = `تاسو ممکن وړ یاست، مګر د ډاډ ترلاسه کولو لپاره موږ نورو معلوماتو ته اړتیا لرو.`;
+        } else if (lang === 'pn') {
+          text = `تسی لائق ہو سکدے او، پر پکی گل لئی ہور معلومات چاہی دی اے۔`;
+        } else {
+          text = `شما لائق بوت کنائت، پر گیشیں معلومات پکار انت۔`;
+        }
+        break;
+      case 'LIKELY_NOT_ELIGIBLE':
+        if (lang === 'en') {
+          text = `Based on the information provided, you may not meet the eligibility criteria. ${unmet.length > 0 ? `Conditions not met: ${unmet.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ur') {
+          text = `فراہم کردہ معلومات کی بنیاد پر، آپ اہلیت کے معیار پر پورا نہیں اترتے۔ ${unmet.length > 0 ? `شرائط جو پوری نہیں ہوئیں: ${unmet.join(delimiter)}۔` : ''}`;
+        } else if (lang === 'sd') {
+          text = `توهان اهليت جي معيار تي پورا نٿا لهو. ${unmet.length > 0 ? `شرط جيڪي پورا نه ٿيا: ${unmet.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ps') {
+          text = `د ورکړل شوي معلوماتو پراساس، تاسو د وړتیا معیارونه نه پوره کوئ.`;
+        } else if (lang === 'pn') {
+          text = `تسی اہلیت دے معیاراں تے پورے نہیں اتردے۔`;
+        } else {
+          text = `شما اہلیت ءِ معیاراں پوره نہ کن ات۔`;
+        }
+        break;
+      case 'INSUFFICIENT_DATA':
+        if (lang === 'en') {
+          text = `We don't have enough information to assess eligibility. ${unknown.length > 0 ? `We need to know: ${unknown.join(delimiter)}.` : ''}`;
+        } else if (lang === 'ur') {
+          text = `اہلیت کا جائزہ لینے کے لیے کافی معلومات نہیں ہیں۔ ${unknown.length > 0 ? `ہمیں معلوم کرنا ہوگا: ${unknown.join(delimiter)}۔` : ''}`;
+        } else {
+          text = `اہلیت کا جائزہ لینے کے لیے کافی معلومات نہیں ہیں۔`;
+        }
+        break;
     }
-  }
-  
-  return { en, ur };
-}
 
-export { PROGRAMS };
+    if (programId === 'sehat_sahulat' && profile.province) {
+      const provinceNames: Record<string, string> = {
+        punjab: 'Punjab', sindh: 'Sindh', kpk: 'KP', balochistan: 'Balochistan',
+        islamabad: 'Islamabad', ajk: 'AJK', gilgit_baltistan: 'Gilgit-Baltistan'
+      };
+      if (profile.province === 'punjab') {
+        if (lang === 'en') {
+          text += ` ⚠️ Important: In ${provinceNames[profile.province]}, the Sehat Card currently works ONLY at private empaneled hospitals — not at government hospitals. Also, only IN-PATIENT treatment is covered (not OPD/routine checkups).`;
+        } else {
+          text += ` ⚠️ اہم: پنجاب میں صحت کارڈ فی الحال صرف نجی ہسپتالوں میں کام کرتا ہے — سرکاری ہسپتالوں میں نہیں۔ اور صرف داخل مریضوں کا علاج مفت ہے۔`;
+        }
+      } else {
+        if (lang === 'en') {
+          text += ` In ${provinceNames[profile.province]}, the Sehat Card covers treatment at both public and private empaneled hospitals. Note: only IN-PATIENT treatment is covered (not OPD/routine checkups).`;
+        } else {
+          text += ` اس صوبے میں صحت کارڈ کے تحت رجسٹرڈ سرکاری اور نجی دونوں ہسپتالوں میں داخل مریضوں کا علاج مفت ہے۔`;
+        }
+      }
+    }
+    return text;
+  };
+
+  return {
+    en: getLanguageExplanation('en'),
+    ur: getLanguageExplanation('ur'),
+    sd: getLanguageExplanation('sd'),
+    ps: getLanguageExplanation('ps'),
+    pn: getLanguageExplanation('pn'),
+    bl: getLanguageExplanation('bl'),
+  };
+}

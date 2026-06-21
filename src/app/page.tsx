@@ -3,12 +3,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/context';
 import { PROGRAMS } from '@/lib/rules-engine/programs';
+import { STORIES } from '@/app/stories/page';
 import AppShell from '@/components/layout/AppShell';
 import {
   Compass, ArrowRight, MessageCircle, Brain, ClipboardCheck,
   Banknote, GraduationCap, HeartPulse, ShieldPlus, Package,
   Globe, Mic, FileSearch, Users, Sparkles, ChevronRight,
-  MapPin, Phone, CheckCircle2
+  MapPin, CheckCircle2
 } from 'lucide-react';
 
 function AnimatedCounter({ end, suffix = '', prefix = '' }: { end: number; suffix?: string; prefix?: string }) {
@@ -45,20 +46,30 @@ const PROGRAM_ICONS: Record<string, React.ReactNode> = {
   ramzan_relief: <Package className="w-6 h-6" />,
 };
 
-const FEATURES = [
-  { icon: <Globe className="w-6 h-6" />, title: '6 Languages', desc: 'English, Urdu, Sindhi, Pashto, Punjabi, Balochi' },
-  { icon: <Mic className="w-6 h-6" />, title: 'Voice Input', desc: 'Speak in your language — AI understands' },
-  { icon: <FileSearch className="w-6 h-6" />, title: 'Document Scan', desc: 'Upload CNIC/B-Form for auto-extraction' },
-  { icon: <MapPin className="w-6 h-6" />, title: 'Province-Aware', desc: 'Different provinces, different coverage' },
-  { icon: <Users className="w-6 h-6" />, title: 'Cross-Program', desc: 'One program can unlock others' },
-  { icon: <ShieldPlus className="w-6 h-6" />, title: 'Responsible AI', desc: '"May qualify" — never "you qualify"' },
-];
-
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => { setIsVisible(true); }, []);
+
+  const getTranslation = (field: any) => {
+    if (!field) return '';
+    return field[language] || field.ur || field.en || '';
+  };
+
+  const getTranslationList = (field: any): string[] => {
+    if (!field) return [];
+    return field[language] || field.ur || field.en || [];
+  };
+
+  const FEATURES = [
+    { icon: <Globe className="w-6 h-6" />, title: t('feature.languages.title'), desc: t('feature.languages.desc') },
+    { icon: <Mic className="w-6 h-6" />, title: t('feature.voice.title'), desc: t('feature.voice.desc') },
+    { icon: <FileSearch className="w-6 h-6" />, title: t('feature.scan.title'), desc: t('feature.scan.desc') },
+    { icon: <MapPin className="w-6 h-6" />, title: t('feature.province.title'), desc: t('feature.province.desc') },
+    { icon: <Users className="w-6 h-6" />, title: t('feature.cross.title'), desc: t('feature.cross.desc') },
+    { icon: <ShieldPlus className="w-6 h-6" />, title: t('feature.responsible.title'), desc: t('feature.responsible.desc') },
+  ];
 
   return (
     <AppShell>
@@ -92,9 +103,8 @@ export default function HomePage() {
                 USAII Global AI Hackathon 2026
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="text-cream">{t('hero.title').split(' ').slice(0, -3).join(' ')} </span>
-                <span className="text-gradient-gold">{t('hero.title').split(' ').slice(-3).join(' ')}</span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-cream">
+                {t('hero.title')}
               </h1>
               
               <p className="text-lg text-sage-400 leading-relaxed max-w-xl">
@@ -104,17 +114,17 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/navigator"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-lg hover:from-gold-500 hover:to-gold-400 transition-all duration-300 shadow-lg hover:shadow-gold-500/25 hover:scale-105 active:scale-95"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-lg hover:from-gold-500 hover:to-gold-400 transition-all duration-300 shadow-lg hover:shadow-gold-500/25 hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <MessageCircle className="w-5 h-5 shrink-0" />
                   {t('hero.cta.chat')}
                 </Link>
                 <Link
                   href="/programs"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl glass text-cream font-semibold hover:bg-emerald-800/50 transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl glass text-cream font-semibold hover:bg-emerald-800/50 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                 >
                   {t('hero.cta.explore')}
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-5 h-5 shrink-0" />
                 </Link>
               </div>
 
@@ -206,7 +216,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">{t('how.title')}</h2>
-              <p className="text-sage-400 max-w-2xl mx-auto">Three simple steps to discover what you may be eligible for</p>
+              <p className="text-sage-400 max-w-2xl mx-auto">{t('how.subtitle')}</p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               {[
@@ -239,13 +249,13 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">{t('programs.title')}</h2>
-              <p className="text-sage-400">Pakistan&apos;s major social protection programs — all in one place</p>
+              <p className="text-sage-400">{t('programs.subtitle')}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {PROGRAMS.map((program, i) => (
-                <Link href="/programs" key={program.id}>
+                <Link href="/programs" key={program.id} className="cursor-pointer">
                   <div
-                    className="glass rounded-2xl p-6 card-hover h-full cursor-pointer"
+                    className="glass rounded-2xl p-6 card-hover h-full"
                     style={{ animationDelay: `${i * 0.1}s` }}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -256,11 +266,11 @@ export default function HomePage() {
                         {program.type.replace('_', ' ')}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-cream mb-2">{program.name.en}</h3>
-                    <p className="text-sm text-gold-400 font-medium mb-3">{program.benefit.en}</p>
-                    <p className="text-xs text-sage-500 line-clamp-2">{program.description.en}</p>
+                    <h3 className="text-lg font-bold text-cream mb-2">{getTranslation(program.name)}</h3>
+                    <p className="text-sm text-gold-400 font-medium mb-3">{getTranslation(program.benefit)}</p>
+                    <p className="text-xs text-sage-500 line-clamp-2">{getTranslation(program.description)}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400">
-                      <span>Learn more</span>
+                      <span>{t('programs.learn_more')}</span>
                       <ArrowRight className="w-3 h-3" />
                     </div>
                   </div>
@@ -275,8 +285,8 @@ export default function HomePage() {
           <div className="pattern-overlay" />
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">Built for Real People</h2>
-              <p className="text-sage-400">Features designed for Pakistan&apos;s most vulnerable communities</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">{t('features.title')}</h2>
+              <p className="text-sage-400">{t('features.subtitle')}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {FEATURES.map((feature, i) => (
@@ -296,36 +306,32 @@ export default function HomePage() {
         <section className="py-24 bg-surface-secondary/30">
           <div className="max-w-5xl mx-auto px-6">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">The Impact</h2>
-              <p className="text-sage-400">How Raahnuma changes the journey from confusion to clarity</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">{t('impact.title')}</h2>
+              <p className="text-sage-400">{t('impact.subtitle')}</p>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
               {/* Before */}
               <div className="rounded-2xl p-8 border border-rose-500/20 bg-rose-500/5">
-                <div className="text-sm font-bold text-rose-400 mb-4 flex items-center gap-2">
-                  <X className="w-4 h-4" /> BEFORE RAAHNUMA
+                <div className="text-sm font-bold text-rose-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                  <span className="text-rose-400 font-bold">✗</span> {t('stories.before')}
                 </div>
                 <div className="space-y-3 text-sm text-sage-400">
-                  <p>❌ Amina doesn&apos;t know her family&apos;s PMT score</p>
-                  <p>❌ Never heard of the Nashonuma programme</p>
-                  <p>❌ Doesn&apos;t know her CNIC works as a health card</p>
-                  <p>❌ Misses Rs. 14,500/quarter in cash transfers</p>
-                  <p>❌ Her son misses education stipend of Rs. 3,500</p>
-                  <p className="text-rose-300 font-medium pt-2">She doesn&apos;t know what exists or how to apply.</p>
+                  {getTranslationList(STORIES[0].before).map((point, idx) => (
+                    <p key={idx}>❌ {point}</p>
+                  ))}
+                  <p className="text-rose-300 font-medium pt-2">{t('impact.before_summary')}</p>
                 </div>
               </div>
               {/* After */}
               <div className="rounded-2xl p-8 border border-emerald-500/20 bg-emerald-500/5">
-                <div className="text-sm font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" /> AFTER RAAHNUMA
+                <div className="text-sm font-bold text-emerald-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t('stories.after')}
                 </div>
                 <div className="space-y-3 text-sm text-sage-400">
-                  <p>✅ Describes her situation in one paragraph</p>
-                  <p>✅ Raahnuma identifies 4 potential programs</p>
-                  <p>✅ Told to SMS 8171 to check Kafaalat status</p>
-                  <p>✅ Learns Nashonuma requires DHQ hospital visit</p>
-                  <p>✅ Discovers her CNIC IS her Sehat Card</p>
-                  <p className="text-emerald-300 font-medium pt-2">From &quot;I don&apos;t know&quot; to &quot;I know what to do&quot; in 3 minutes.</p>
+                  {getTranslationList(STORIES[0].after).map((point, idx) => (
+                    <p key={idx}>✅ {point}</p>
+                  ))}
+                  <p className="text-emerald-300 font-medium pt-2">{t('impact.after_summary')}</p>
                 </div>
               </div>
             </div>
@@ -340,16 +346,16 @@ export default function HomePage() {
               <Compass className="w-10 h-10 text-emerald-950" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-cream mb-4">
-              Ready to find out what you may qualify for?
+              {t('cta.title')}
             </h2>
             <p className="text-sage-400 mb-8 max-w-xl mx-auto">
-              Describe your situation in your own words — in English, Urdu, or any provincial language. Raahnuma will guide you.
+              {t('cta.subtitle')}
             </p>
             <Link
               href="/navigator"
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-xl hover:from-gold-500 hover:to-gold-400 transition-all duration-300 shadow-xl hover:shadow-gold-500/30 hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-xl hover:from-gold-500 hover:to-gold-400 transition-all duration-300 shadow-xl hover:shadow-gold-500/30 hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <MessageCircle className="w-6 h-6" />
+              <MessageCircle className="w-6 h-6 shrink-0" />
               {t('hero.cta.chat')}
             </Link>
           </div>
@@ -357,8 +363,4 @@ export default function HomePage() {
       </div>
     </AppShell>
   );
-}
-
-function X({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>;
 }

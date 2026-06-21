@@ -11,24 +11,101 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const PROVINCES: { value: Province; label: string; labelUr: string }[] = [
-  { value: 'punjab', label: 'Punjab', labelUr: 'پنجاب' },
-  { value: 'sindh', label: 'Sindh', labelUr: 'سندھ' },
-  { value: 'kpk', label: 'Khyber Pakhtunkhwa', labelUr: 'خیبرپختونخوا' },
-  { value: 'balochistan', label: 'Balochistan', labelUr: 'بلوچستان' },
-  { value: 'islamabad', label: 'Islamabad (ICT)', labelUr: 'اسلام آباد' },
-  { value: 'ajk', label: 'Azad Jammu & Kashmir', labelUr: 'آزاد جموں و کشمیر' },
-  { value: 'gilgit_baltistan', label: 'Gilgit-Baltistan', labelUr: 'گلگت بلتستان' },
+const PROVINCE_TRANSLATIONS: Record<Province, Record<string, string>> = {
+  punjab: { en: 'Punjab', ur: 'پنجاب', sd: 'پنجاب', ps: 'پنجاب', pn: 'پنجاب', bl: 'پنجاب' },
+  sindh: { en: 'Sindh', ur: 'سندھ', sd: 'سنڌ', ps: 'سندھ', pn: 'سندھ', bl: 'سندھ' },
+  kpk: { en: 'Khyber Pakhtunkhwa', ur: 'خیبرپختونخوا', sd: 'خيبر پختونخوا', ps: 'خيبر پښتونخوا', pn: 'خیبر پختونخوا', bl: 'خیبر پختونخوا' },
+  balochistan: { en: 'Balochistan', ur: 'بلوچستان', sd: 'بلوچستان', ps: 'بلوچستان', pn: 'بلوچستان', bl: 'بلوچستان' },
+  islamabad: { en: 'Islamabad (ICT)', ur: 'اسلام آباد', sd: 'اسلام آباد', ps: 'اسلام آباد', pn: 'اسلام آباد', bl: 'اسلام آباد' },
+  ajk: { en: 'Azad Jammu & Kashmir', ur: 'آزاد جموں و کشمیر', sd: 'آزاد ڪشمير', ps: 'آزاد کشمیر', pn: 'آزاد کشمیر', bl: 'آزاد کشمیر' },
+  gilgit_baltistan: { en: 'Gilgit-Baltistan', ur: 'گلگت بلتستان', sd: 'گلگت بلتستان', ps: 'گلگت بلتستان', pn: 'گلگت بلتستان', bl: 'گلگت بلتستان' }
+};
+
+const PROVINCES: { value: Province }[] = [
+  { value: 'punjab' },
+  { value: 'sindh' },
+  { value: 'kpk' },
+  { value: 'balochistan' },
+  { value: 'islamabad' },
+  { value: 'ajk' },
+  { value: 'gilgit_baltistan' },
 ];
 
-const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
-  { value: 'daily_wage', label: 'Daily Wage Worker' },
-  { value: 'agricultural', label: 'Agricultural / Farming' },
-  { value: 'domestic_worker', label: 'Domestic Worker' },
-  { value: 'self_employed', label: 'Self-Employed / Small Business' },
-  { value: 'salaried', label: 'Salaried Employee' },
-  { value: 'unemployed', label: 'Unemployed' },
-  { value: 'retired', label: 'Retired' },
+const EMPLOYMENT_TRANSLATIONS: Record<EmploymentType, Record<string, string>> = {
+  daily_wage: {
+    en: 'Daily Wage Worker',
+    ur: 'دیہاڑی دار مزدور',
+    sd: 'ڏهاڙي تي ڪم ڪندڙ مزدور',
+    ps: 'ورځنی مزدوري کونکی',
+    pn: 'دیہاڑی دار مزدور',
+    bl: 'روچ کاریں مزدور'
+  },
+  agricultural: {
+    en: 'Agricultural / Farming',
+    ur: 'زراعت / کاشتکاری',
+    sd: 'زراعت / آبادگاري',
+    ps: 'کرنه او مالداري',
+    pn: 'کاشتکاری / کھیتی باڑی',
+    bl: 'کاشتکاری / کہن'
+  },
+  domestic_worker: {
+    en: 'Domestic Worker',
+    ur: 'گھریلو ملازم',
+    sd: 'گهريلو ملازم',
+    ps: 'کورنی کارکونکی',
+    pn: 'گھریلو ملازم',
+    bl: 'لوگی کارندہ'
+  },
+  self_employed: {
+    en: 'Self-Employed / Small Business',
+    ur: 'ذاتی کاروبار / چھوٹا کاروبار',
+    sd: 'ذاتي ڪاروبار / ننڍو واپار',
+    ps: 'خپلواک کاروبار / وړوکی تجارت',
+    pn: 'اپنا کاروبار',
+    bl: 'وتی کاروبار'
+  },
+  salaried: {
+    en: 'Salaried Employee',
+    ur: 'تنخواہ دار ملازم',
+    sd: 'پگهاردار ملازم',
+    ps: 'معاش خور کارمند',
+    pn: 'نوکری پیشہ',
+    bl: 'ماہانہ تنخواہ والا'
+  },
+  unemployed: {
+    en: 'Unemployed',
+    ur: 'بے روزگار',
+    sd: 'بيروزگار',
+    ps: 'وزګار',
+    pn: 'بے روزگار',
+    bl: 'بے روزگار'
+  },
+  retired: {
+    en: 'Retired',
+    ur: 'ریٹائرڈ',
+    sd: 'ريٽائرڊ',
+    ps: 'تقاعد شوی',
+    pn: 'ریٹائرڈ',
+    bl: 'ریٹائرڈ'
+  },
+  unknown: {
+    en: 'Unknown',
+    ur: 'نامعلوم',
+    sd: 'نامعلوم',
+    ps: 'نامعلوم',
+    pn: 'نامعلوم',
+    bl: 'نامعلوم'
+  }
+};
+
+const EMPLOYMENT_TYPES: { value: EmploymentType }[] = [
+  { value: 'daily_wage' },
+  { value: 'agricultural' },
+  { value: 'domestic_worker' },
+  { value: 'self_employed' },
+  { value: 'salaried' },
+  { value: 'unemployed' },
+  { value: 'retired' },
 ];
 
 const STEPS = [
@@ -45,7 +122,6 @@ export default function CheckerPage() {
   const [step, setStep] = useState(0);
   const [results, setResults] = useState<AssessmentResult | null>(null);
   const [profile, setProfile] = useState<UserProfile>({});
-  const isEn = language === 'en';
 
   const handleSubmit = () => {
     const assessment = evaluateEligibility(profile);
@@ -61,10 +137,10 @@ export default function CheckerPage() {
           <div className="flex items-center justify-between mb-8 no-print">
             <div>
               <h1 className="text-3xl font-bold text-cream">
-                {isEn ? 'Your Results' : 'آپ کے نتائج'}
+                {t('checker.results')}
               </h1>
               <p className="text-sage-400 mt-1">
-                {isEn ? 'Based on the information you provided' : 'آپ کی فراہم کردہ معلومات کی بنیاد پر'}
+                {t('checker.results.desc')}
               </p>
             </div>
             <div className="flex gap-3">
@@ -72,13 +148,13 @@ export default function CheckerPage() {
                 onClick={reset}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl glass text-sage-400 hover:text-cream text-sm"
               >
-                <RotateCcw className="w-4 h-4" /> {isEn ? 'Start Over' : 'دوبارہ شروع'}
+                <RotateCcw className="w-4 h-4" /> {t('checker.start_over')}
               </button>
               <Link
                 href="/navigator"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 text-sm font-bold"
               >
-                <MessageCircle className="w-4 h-4" /> {isEn ? 'Talk to AI' : 'اے آئی سے بات کریں'}
+                <MessageCircle className="w-4 h-4" /> {t('checker.talk_to_ai')}
               </Link>
             </div>
           </div>
@@ -117,8 +193,7 @@ export default function CheckerPage() {
                 {PROVINCES.map(p => (
                   <button key={p.value} onClick={() => { setProfile(prev => ({ ...prev, province: p.value })); setStep(1); }}
                     className={`p-4 rounded-xl text-left transition-all ${profile.province === p.value ? 'bg-gold-500/15 border border-gold-500/30 text-gold-400' : 'glass text-sage-400 hover:text-cream hover:bg-emerald-800/30'}`}>
-                    <div className="font-medium text-sm">{p.label}</div>
-                    <div className="text-xs opacity-70 mt-0.5">{p.labelUr}</div>
+                    <div className="font-medium text-sm">{PROVINCE_TRANSLATIONS[p.value][language] || PROVINCE_TRANSLATIONS[p.value].en}</div>
                   </button>
                 ))}
               </div>
@@ -148,7 +223,7 @@ export default function CheckerPage() {
                 {EMPLOYMENT_TYPES.map(e => (
                   <button key={e.value} onClick={() => { setProfile(prev => ({ ...prev, employmentType: e.value })); setStep(3); }}
                     className={`w-full p-4 rounded-xl text-left transition-all ${profile.employmentType === e.value ? 'bg-gold-500/15 border border-gold-500/30 text-gold-400' : 'glass text-sage-400 hover:text-cream hover:bg-emerald-800/30'}`}>
-                    {e.label}
+                    {EMPLOYMENT_TRANSLATIONS[e.value][language] || EMPLOYMENT_TRANSLATIONS[e.value].en}
                   </button>
                 ))}
               </div>
@@ -163,11 +238,11 @@ export default function CheckerPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <button onClick={() => { setProfile(prev => ({ ...prev, hasSchoolAgeChildren: true })); }}
                     className={`p-6 rounded-xl text-center transition-all ${profile.hasSchoolAgeChildren === true ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' : 'glass text-sage-400 hover:text-cream'}`}>
-                    <div className="text-2xl mb-2">✓</div>Yes
+                    <div className="text-2xl mb-2">✓</div>{t('yes')}
                   </button>
                   <button onClick={() => { setProfile(prev => ({ ...prev, hasSchoolAgeChildren: false })); setStep(4); }}
                     className={`p-6 rounded-xl text-center transition-all ${profile.hasSchoolAgeChildren === false ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400' : 'glass text-sage-400 hover:text-cream'}`}>
-                    <div className="text-2xl mb-2">✗</div>No
+                    <div className="text-2xl mb-2">✗</div>{t('no')}
                   </button>
                 </div>
                 {profile.hasSchoolAgeChildren && (
@@ -189,14 +264,10 @@ export default function CheckerPage() {
           {step === 4 && (
             <div className="animate-fade-in-up">
               <h2 className="text-xl font-bold text-cream mb-2">
-                {isEn
-                  ? 'Are you already a Benazir Kafaalat beneficiary?'
-                  : 'کیا آپ پہلے سے بے نظیر کفالت کے مستفید ہیں؟'}
+                {t('checker.kafaalat.q')}
               </h2>
               <p className="text-sm text-sage-400 mb-6">
-                {isEn
-                  ? 'Required for Taleemi Wazaif and Nashonuma eligibility checks.'
-                  : 'تعلیمی وظائف اور نشونuma کی اہلیت کے لیے ضروری ہے۔'}
+                {t('checker.kafaalat.desc')}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -206,7 +277,7 @@ export default function CheckerPage() {
                   }}
                   className="p-6 rounded-xl text-center glass text-sage-400 hover:text-emerald-400 hover:bg-emerald-500/10"
                 >
-                  {isEn ? 'Yes' : 'ہاں'}
+                  {t('yes')}
                 </button>
                 <button
                   onClick={() => {
@@ -215,7 +286,7 @@ export default function CheckerPage() {
                   }}
                   className="p-6 rounded-xl text-center glass text-sage-400 hover:text-cream"
                 >
-                  {isEn ? 'No / Not sure' : 'نہیں / یقین نہیں'}
+                  {t('no_sure')}
                 </button>
               </div>
             </div>
@@ -237,7 +308,7 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'Yes' : 'ہاں'}
+                    {t('yes')}
                   </button>
                   <button
                     onClick={() =>
@@ -249,14 +320,14 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'No' : 'نہیں'}
+                    {t('no')}
                   </button>
                 </div>
               </div>
 
               <div>
                 <h2 className="text-xl font-bold text-cream mb-3">
-                  {isEn ? 'Any children under 2 years old?' : 'کیا 2 سال سے کم عمر بچے ہیں؟'}
+                  {t('checker.pregnant.infant')}
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
                   <button
@@ -269,7 +340,7 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'Yes' : 'ہاں'}
+                    {t('yes')}
                   </button>
                   <button
                     onClick={() =>
@@ -281,7 +352,7 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'No' : 'نہیں'}
+                    {t('no')}
                   </button>
                 </div>
               </div>
@@ -297,7 +368,7 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'Yes' : 'ہاں'}
+                    {t('yes')}
                   </button>
                   <button
                     onClick={() => setProfile((prev) => ({ ...prev, hasDisabledMember: false }))}
@@ -307,7 +378,7 @@ export default function CheckerPage() {
                         : 'glass text-sage-400 hover:text-cream'
                     }`}
                   >
-                    {isEn ? 'No' : 'نہیں'}
+                    {t('no')}
                   </button>
                 </div>
               </div>

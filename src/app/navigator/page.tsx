@@ -5,6 +5,7 @@ import AppShell from '@/components/layout/AppShell';
 import ResultsPanel from '@/components/results/ResultsPanel';
 import { useLanguage } from '@/lib/i18n/context';
 import { AssessmentResult } from '@/lib/rules-engine/types';
+import JSZip from 'jszip';
 import {
   Send,
   Mic,
@@ -16,6 +17,129 @@ import {
   Volume2,
   X,
 } from 'lucide-react';
+
+function getMimeTypeFromFilename(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'pdf':
+      return 'application/pdf';
+    case 'txt':
+      return 'text/plain';
+    default:
+      return '';
+  }
+}
+
+async function extractTextFromDocx(arrayBuffer: ArrayBuffer): Promise<string> {
+  try {
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const xmlText = await zip.file('word/document.xml')?.async('string');
+    if (!xmlText) return '';
+    const matches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+    if (!matches) return '';
+    return matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+  } catch (err) {
+    console.error('Docx extraction error:', err);
+    return '';
+  }
+}
+
+interface ExtractionResult {
+  type: 'text' | 'media';
+  text?: string;
+  base64?: string;
+  mimeType?: string;
+  fileName: string;
+}
+
+async function extractFileContent(file: File): Promise<ExtractionResult> {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+
+  if (ext === 'txt') {
+    const text = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+    return { type: 'text', text, fileName: file.name };
+  }
+
+  if (ext === 'docx') {
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+    const text = await extractTextFromDocx(arrayBuffer);
+    return { type: 'text', text, fileName: file.name };
+  }
+
+  if (ext === 'zip') {
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    let foundFile = null;
+    let foundFileName = '';
+
+    for (const relativePath of Object.keys(zip.files)) {
+      const zipEntry = zip.files[relativePath];
+      if (zipEntry.dir) continue;
+      const innerExt = relativePath.split('.').pop()?.toLowerCase();
+      if (['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'docx'].includes(innerExt || '')) {
+        foundFile = zipEntry;
+        foundFileName = relativePath;
+        break;
+      }
+    }
+
+    if (!foundFile) {
+      throw new Error('No supported files found inside the ZIP archive. Include a JPG, PNG, WebP, PDF, TXT, or DOCX file.');
+    }
+
+    const innerExt = foundFileName.split('.').pop()?.toLowerCase();
+
+    if (innerExt === 'txt') {
+      const text = await foundFile.async('string');
+      return { type: 'text', text, fileName: foundFileName };
+    }
+
+    if (innerExt === 'docx') {
+      const innerBuf = await foundFile.async('arraybuffer');
+      const text = await extractTextFromDocx(innerBuf);
+      return { type: 'text', text, fileName: foundFileName };
+    }
+
+    const base64 = await foundFile.async('base64');
+    const mimeType = getMimeTypeFromFilename(foundFileName);
+    return { type: 'media', base64, mimeType, fileName: foundFileName };
+  }
+
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const mimeType = file.type || getMimeTypeFromFilename(file.name);
+  return { type: 'media', base64, mimeType, fileName: file.name };
+}
 
 interface Message {
   id: string;
@@ -226,15 +350,21 @@ export default function NavigatorPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const maxSize = 5 * 1024 * 1024;
+    setError(null);
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      setError('File too large. Maximum size is 5MB.');
+      setError(language === 'en' ? 'File too large. Maximum size is 10MB.' : 'فائل بہت بڑی ہے۔ زیادہ سے زیادہ سائز 10MB ہے۔');
       return;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Unsupported file type. Use JPG, PNG, WebP, or PDF.');
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'docx', 'zip'];
+    if (!allowedExtensions.includes(ext || '')) {
+      setError(
+        language === 'en'
+          ? 'Unsupported file type. Use JPG, PNG, WebP, PDF, TXT, DOCX, or ZIP.'
+          : 'غیر تعاون یافتہ فائل کی قسم۔ براہ کرم JPG، PNG، WebP، PDF، TXT، DOCX، یا ZIP استعمال کریں۔'
+      );
       return;
     }
 
@@ -243,87 +373,130 @@ export default function NavigatorPage() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: `📎 ${t('upload.title')}: ${file.name}`,
+        content: `📎 ${t('upload.title') || 'Uploaded Document'}: ${file.name}`,
         timestamp: new Date(),
       },
     ]);
     setIsLoading(true);
-    setError(null);
 
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const extraction = await extractFileContent(file);
 
-      const res = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: base64,
-          mimeType: file.type,
-          documentType: 'cnic',
-        }),
-      });
+      if (extraction.type === 'text') {
+        const cleanText = extraction.text?.trim();
+        if (!cleanText) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content:
+                language === 'en'
+                  ? 'The document appears to be empty. Please enter your details manually.'
+                  : 'دستاویز خالی معلوم ہوتی ہے۔ براہ کرم اپنی تفصیلات خود درج کریں۔',
+              timestamp: new Date(),
+            },
+          ]);
+          return;
+        }
 
-      const data = await res.json();
-
-      if (!res.ok) {
         setMessages((prev) => [
           ...prev,
           {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content:
-              data.message ||
-              data.error ||
-              'Document analysis is not available. Please describe your CNIC details manually.',
+              language === 'en'
+                ? `I extracted the following text from "${extraction.fileName}":\n\n"${cleanText.slice(0, 300)}${cleanText.length > 300 ? '...' : ''}"\n\nAnalyzing this text for eligibility...`
+                : `میں نے اس دستاویز "${extraction.fileName}" سے درج ذیل متن نکالا ہے:\n\n"${cleanText.slice(0, 300)}${cleanText.length > 300 ? '...' : ''}"\n\nاہلیت کے لیے اس متن کا جائزہ لیا جا رہا ہے...`,
             timestamp: new Date(),
           },
         ]);
-        return;
-      }
 
-      const ext = data.extracted;
-      const summary = [
-        ext.cnicNumber && `CNIC: ${ext.cnicNumber}`,
-        ext.fullName && `Name: ${ext.fullName}`,
-        ext.province && `Province: ${ext.province}`,
-        ext.address && `Address: ${ext.address}`,
-      ]
-        .filter(Boolean)
-        .join('\n');
+        await sendMessage(
+          language === 'en'
+            ? `Analyzing document content: ${cleanText.slice(0, 4000)}`
+            : `دستاویز کے مواد کا تجزیہ: ${cleanText.slice(0, 4000)}`
+        );
+      } else {
+        // Media type (image or PDF)
+        const res = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: extraction.base64,
+            mimeType: extraction.mimeType,
+            documentType: 'cnic',
+          }),
+        });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content:
-            summary.length > 0
-              ? `I extracted the following from your document:\n${summary}\n\nLet me check your eligibility based on this information.`
-              : 'I could not extract clear information from the document. Please describe your details manually.',
-          timestamp: new Date(),
-        },
-      ]);
+        const data = await res.json();
 
-      if (ext.province || ext.cnicNumber) {
-        const autoMessage = [
-          ext.province && `My CNIC province is ${ext.province}.`,
-          ext.cnicNumber && `My CNIC number is ${ext.cnicNumber}.`,
-          'Please check my eligibility for government programs.',
+        if (!res.ok) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content:
+                data.message ||
+                data.error ||
+                (language === 'en'
+                  ? 'Document analysis is not available. Please describe your CNIC details manually.'
+                  : 'دستاویز کا تجزیہ دستیاب نہیں ہے۔ براہ کرم اپنے شناختی کارڈ کی تفصیلات خود بیان کریں۔'),
+              timestamp: new Date(),
+            },
+          ]);
+          return;
+        }
+
+        const extData = data.extracted;
+        const summary = [
+          extData.cnicNumber && `${language === 'en' ? 'CNIC' : 'شناختی کارڈ'}: ${extData.cnicNumber}`,
+          extData.fullName && `${language === 'en' ? 'Name' : 'نام'}: ${extData.fullName}`,
+          extData.province && `${language === 'en' ? 'Province' : 'صوبہ'}: ${extData.province}`,
+          extData.address && `${language === 'en' ? 'Address' : 'پتہ'}: ${extData.address}`,
         ]
           .filter(Boolean)
-          .join(' ');
-        await sendMessage(autoMessage);
+          .join('\n');
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content:
+              summary.length > 0
+                ? language === 'en'
+                  ? `I extracted the following from "${extraction.fileName}":\n${summary}\n\nLet me check your eligibility based on this information.`
+                  : `میں نے اس دستاویز "${extraction.fileName}" سے درج ذیل معلومات حاصل کی ہیں:\n${summary}\n\nآئیے اس معلومات کی بنیاد پر آپ کی اہلیت چیک کرتے ہیں۔`
+                : language === 'en'
+                ? 'I could not extract clear information from the document. Please describe your details manually.'
+                : 'میں دستاویز سے واضح معلومات حاصل نہیں کر سکا۔ براہ کرم اپنی تفصیلات خود بیان کریں۔',
+            timestamp: new Date(),
+          },
+        ]);
+
+        if (extData.province || extData.cnicNumber) {
+          const autoMessage = [
+            extData.province && `My CNIC province is ${extData.province}.`,
+            extData.cnicNumber && `My CNIC number is ${extData.cnicNumber}.`,
+            'Please check my eligibility for government programs.',
+          ]
+            .filter(Boolean)
+            .join(' ');
+          await sendMessage(autoMessage);
+        }
       }
-    } catch {
-      setError('Failed to process document. Please try again or enter details manually.');
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : (language === 'en'
+              ? 'Failed to process document. Please try again or enter details manually.'
+              : 'دستاویز پر کارروائی کرنے میں ناکامی۔ دوبارہ کوشش کریں یا تفصیلات خود درج کریں۔')
+      );
     } finally {
       setIsLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -439,7 +612,7 @@ export default function NavigatorPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf,application/zip,application/x-zip-compressed,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 onChange={handleFileUpload}
                 className="hidden"
               />

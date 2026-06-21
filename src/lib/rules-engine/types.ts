@@ -65,22 +65,34 @@ export interface UserProfile {
   livesInRuralArea?: boolean;
 }
 
+export interface MultilingualText {
+  en: string;
+  ur: string;
+  sd?: string;
+  ps?: string;
+  pn?: string;
+  bl?: string;
+}
+
+export interface MultilingualList {
+  en: string[];
+  ur: string[];
+  sd?: string[];
+  ps?: string[];
+  pn?: string[];
+  bl?: string[];
+}
+
 export interface EligibilityCriterion {
   id: string;
-  description: {
-    en: string;
-    ur: string;
-  };
+  description: MultilingualText;
   evaluate: (profile: UserProfile) => ConditionStatus;
   weight: 'required' | 'strong_indicator' | 'supporting';
 }
 
 export interface RegistrationChannel {
   type: 'sms' | 'web_portal' | 'in_person' | 'helpline' | 'app';
-  details: {
-    en: string;
-    ur: string;
-  };
+  details: MultilingualText;
   smsCode?: string;
   url?: string;
   phone?: string;
@@ -89,10 +101,7 @@ export interface RegistrationChannel {
 
 export interface ProvinceVariation {
   province: Province;
-  description: {
-    en: string;
-    ur: string;
-  };
+  description: MultilingualText;
   isAvailable: boolean;
   restrictions?: string[];
   hospitalType?: 'private_only' | 'public_only' | 'both';
@@ -100,34 +109,19 @@ export interface ProvinceVariation {
 
 export interface Program {
   id: string;
-  name: {
-    en: string;
-    ur: string;
-  };
+  name: MultilingualText;
   shortName: string;
   type: ProgramType;
   icon: string;
   color: string;
-  benefit: {
-    en: string;
-    ur: string;
-  };
-  description: {
-    en: string;
-    ur: string;
-  };
+  benefit: MultilingualText;
+  description: MultilingualText;
   eligibilityCriteria: EligibilityCriterion[];
-  requiredDocuments: {
-    en: string[];
-    ur: string[];
-  };
+  requiredDocuments: MultilingualList;
   registrationChannels: RegistrationChannel[];
   dependsOn?: string[];
   provinceVariations?: ProvinceVariation[];
-  importantNotes?: {
-    en: string[];
-    ur: string[];
-  };
+  importantNotes?: MultilingualList;
   paymentFrequency?: string;
   lastUpdated: string;
 }
@@ -141,16 +135,10 @@ export interface EligibilityResult {
     criterion: EligibilityCriterion;
     status: ConditionStatus;
   }[];
-  explanation: {
-    en: string;
-    ur: string;
-  };
+  explanation: MultilingualText;
   unlockedBy?: string[];
   unlocks?: string[];
-  provinceNote?: {
-    en: string;
-    ur: string;
-  };
+  provinceNote?: MultilingualText;
 }
 
 export interface AssessmentResult {
@@ -159,15 +147,9 @@ export interface AssessmentResult {
   totalProgramsChecked: number;
   likelyEligibleCount: number;
   mayBeEligibleCount: number;
-  crossProgramAlerts: {
-    en: string[];
-    ur: string[];
-  };
+  crossProgramAlerts: MultilingualList;
   timestamp: string;
-  disclaimer: {
-    en: string;
-    ur: string;
-  };
+  disclaimer: MultilingualText;
 }
 
 export type Language = 'en' | 'ur' | 'sd' | 'ps' | 'pn' | 'bl';

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { EligibilityResult } from '@/lib/rules-engine/types';
+import { EligibilityResult, Language } from '@/lib/rules-engine/types';
+import { useLanguage } from '@/lib/i18n/context';
+import { getProgramById } from '@/lib/rules-engine/programs';
 import {
   Banknote,
   GraduationCap,
@@ -33,29 +35,25 @@ const PROGRAM_ICONS: Record<string, React.ReactNode> = {
 export const STATUS_CONFIG = {
   LIKELY_ELIGIBLE: {
     icon: <CheckCircle2 className="w-5 h-5" />,
-    label: 'Likely Eligible',
-    labelUr: 'غالباً اہل',
+    tKey: 'results.likely',
     class: 'status-eligible',
     color: '#34D399',
   },
   MAY_BE_ELIGIBLE: {
     icon: <AlertCircle className="w-5 h-5" />,
-    label: 'May Be Eligible',
-    labelUr: 'اہل ہو سکتے ہیں',
+    tKey: 'results.maybe',
     class: 'status-maybe',
     color: '#FBBF24',
   },
   LIKELY_NOT_ELIGIBLE: {
     icon: <XCircle className="w-5 h-5" />,
-    label: 'Likely Not Eligible',
-    labelUr: 'غالباً نا اہل',
+    tKey: 'results.unlikely',
     class: 'status-unlikely',
     color: '#FB7185',
   },
   INSUFFICIENT_DATA: {
     icon: <HelpCircle className="w-5 h-5" />,
-    label: 'More Info Needed',
-    labelUr: 'مزید معلومات درکار',
+    tKey: 'results.insufficient',
     class: 'status-maybe',
     color: '#94A3B8',
   },
@@ -72,9 +70,20 @@ export default function ResultCard({
   lang,
   defaultExpanded = false,
 }: ResultCardProps) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const status = STATUS_CONFIG[result.status];
-  const isEn = lang === 'en';
+  const activeLang = lang as Language;
+
+  const getTranslation = (field: any) => {
+    if (!field) return '';
+    return field[activeLang] || field.ur || field.en || '';
+  };
+
+  const getTranslationList = (field: any): string[] => {
+    if (!field) return [];
+    return field[activeLang] || field.ur || field.en || [];
+  };
 
   return (
     <div className="glass rounded-xl overflow-hidden card-hover border border-border-subtle print-result-card">
@@ -99,22 +108,20 @@ export default function ResultCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-bold text-cream text-sm">
-                {isEn ? result.program.name.en : result.program.name.ur}
+                {getTranslation(result.program.name)}
               </h4>
               <span
                 className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap ${status.class}`}
               >
-                {isEn ? status.label : status.labelUr}
+                {t(status.tKey)}
               </span>
             </div>
             <p className="text-xs text-gold-400 mt-1">
-              {isEn ? result.program.benefit.en : result.program.benefit.ur}
+              {getTranslation(result.program.benefit)}
             </p>
             {result.confidence < 0.5 && (
               <p className="text-[10px] text-sage-500 mt-1">
-                {isEn
-                  ? `Confidence: ${Math.round(result.confidence * 100)}% — verify with official channels`
-                  : `اعتماد: ${Math.round(result.confidence * 100)}% — سرکاری ذرائع سے تصدیق کریں`}
+                {t('confidence.prefix')}: {Math.round(result.confidence * 100)}% {t('confidence.suffix')}
               </p>
             )}
           </div>
@@ -128,30 +135,27 @@ export default function ResultCard({
         <div className="px-4 pb-4 space-y-4 border-t border-border-subtle pt-4 animate-fade-in-up">
           <div>
             <h5 className="text-xs font-semibold text-sage-400 mb-2 uppercase tracking-wider">
-              {isEn ? 'Why' : 'وجہ'}
+              {t('why')}
             </h5>
             <p className="text-sm text-sage-300 leading-relaxed">
-              {isEn ? result.explanation.en : result.explanation.ur}
+              {getTranslation(result.explanation)}
             </p>
           </div>
 
           {result.provinceNote && (
             <div className="p-3 rounded-lg bg-gold-500/5 border border-gold-500/20">
               <p className="text-xs text-gold-400">
-                ⚠️ {isEn ? result.provinceNote.en : result.provinceNote.ur}
+                ⚠️ {getTranslation(result.provinceNote)}
               </p>
             </div>
           )}
 
           <div>
             <h5 className="text-xs font-semibold text-sage-400 mb-2 uppercase tracking-wider flex items-center gap-1">
-              <FileText className="w-3 h-3" /> {isEn ? 'Documents Needed' : 'ضروری دستاویزات'}
+              <FileText className="w-3 h-3" /> {t('documents_needed')}
             </h5>
             <ul className="space-y-1">
-              {(isEn
-                ? result.program.requiredDocuments.en
-                : result.program.requiredDocuments.ur
-              ).map((doc, i) => (
+              {getTranslationList(result.program.requiredDocuments).map((doc, i) => (
                 <li key={i} className="text-xs text-sage-300 flex items-start gap-2">
                   <span className="text-emerald-400 mt-0.5">•</span> {doc}
                 </li>
@@ -161,7 +165,7 @@ export default function ResultCard({
 
           <div>
             <h5 className="text-xs font-semibold text-sage-400 mb-2 uppercase tracking-wider">
-              {isEn ? 'How to Register' : 'رجسٹریشن کا طریقہ'}
+              {t('how_to_register')}
             </h5>
             <div className="space-y-2">
               {result.program.registrationChannels.map((ch, i) => (
@@ -180,7 +184,7 @@ export default function ResultCard({
                   )}
                   <div>
                     <span className="text-sage-300">
-                      {isEn ? ch.details.en : ch.details.ur}
+                      {getTranslation(ch.details)}
                     </span>
                     {ch.smsCode && (
                       <span className="ml-2 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">
@@ -207,10 +211,7 @@ export default function ResultCard({
           {result.unlocks && result.unlocks.length > 0 && (
             <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
               <p className="text-xs text-emerald-400">
-                🔗{' '}
-                {isEn
-                  ? `Qualifying for this program may also unlock: ${result.unlocks.join(', ')}`
-                  : `اس پروگرام کے لیے اہل ہونے سے یہ بھی کھل سکتے ہیں: ${result.unlocks.join(', ')}`}
+                🔗 {t('unlock_alert')}: {result.unlocks.map(uid => getTranslation(getProgramById(uid)?.name) || uid).join(', ')}
               </p>
             </div>
           )}

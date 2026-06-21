@@ -15,11 +15,15 @@ export default function SmsGenerator() {
   const validateCnic = (value: string): boolean => {
     const normalized = value.replace(/-/g, '');
     if (!/^\d{13}$/.test(normalized)) {
-      setError(
-        isEn
-          ? 'Enter a valid 13-digit CNIC (e.g. 12345-1234567-1)'
-          : 'درست 13 ہندسوں والا CNIC درج کریں'
-      );
+      const msgs: Record<string, string> = {
+        en: 'Enter a valid 13-digit CNIC (e.g. 12345-1234567-1)',
+        ur: 'درست 13 ہندسوں والا CNIC درج کریں',
+        sd: 'درست 13 انگن وارو شناختي ڪارڊ نمبر داخل ڪريو',
+        ps: 'مهرباني وکړئ درست ۱۳ رقمي شناختي کارډ دننه کړئ',
+        pn: 'درست 13 ہندسیاں والا شناختی کارڈ نمبر لکھو',
+        bl: 'درستیں 13 رقمی شناختی کارڈ نمبر بہ نویس ات'
+      };
+      setError(msgs[language] || msgs.en);
       return false;
     }
     setError('');
@@ -31,6 +35,18 @@ export default function SmsGenerator() {
     openSmsApp(smsType, cnic);
   };
 
+  const getSmsDesc = () => {
+    const descs: Record<string, string> = {
+      en: 'Enter your CNIC to open a pre-filled SMS to the official verification number.',
+      ur: 'اپنا CNIC درج کریں تاکہ سرکاری تصدیقی نمبر پر SMS کھل جائے۔',
+      sd: 'پنهنجو سڃاڻپ ڪارڊ نمبر داخل ڪريو ته جيئن سرڪاري نمبر تي ايس ايم ايس کلي سگهي.',
+      ps: 'خپل شناختي کارډ شمیره دننه کړئ ترڅو رسمي شمیرې ته ايس ايم ايس پرانیستل شي.',
+      pn: 'اپنا شناختی کارڈ نمبر لکھو تاں جے سرکاری نمبر تے ايس ايم ايس کھل جائے۔',
+      bl: 'وتی شناختی کارڈ نمبر ءَ بہ نویس ات داں سرکاری نمبرءِ واستہ ايس ايم ايس پچ بہ بیت۔'
+    };
+    return descs[language] || descs.en;
+  };
+
   return (
     <div className="glass rounded-xl p-4 border border-border-subtle no-print">
       <h4 className="text-sm font-bold text-cream mb-3 flex items-center gap-2">
@@ -38,9 +54,7 @@ export default function SmsGenerator() {
         {t('sms.generate')}
       </h4>
       <p className="text-xs text-sage-500 mb-3">
-        {isEn
-          ? 'Enter your CNIC to open a pre-filled SMS to the official verification number.'
-          : 'اپنا CNIC درج کریں تاکہ سرکاری تصدیقی نمبر پر SMS کھل جائے۔'}
+        {getSmsDesc()}
       </p>
 
       <div className="flex gap-2 mb-3">

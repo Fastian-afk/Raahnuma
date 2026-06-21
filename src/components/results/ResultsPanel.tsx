@@ -30,7 +30,7 @@ export default function ResultsPanel({
 
   const handleCopy = async () => {
     try {
-      await copyResultsToClipboard(results, isEn ? 'en' : 'ur');
+      await copyResultsToClipboard(results, language);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -44,7 +44,7 @@ export default function ResultsPanel({
         <h3 className="font-bold text-cream">{t('results.title')}</h3>
         <div className="flex gap-2">
           <button
-            onClick={() => shareViaWhatsApp(results, isEn ? 'en' : 'ur')}
+            onClick={() => shareViaWhatsApp(results, language)}
             className="p-1.5 rounded-lg hover:bg-emerald-800/40 text-sage-500"
             title={t('share.whatsapp')}
             aria-label={t('share.whatsapp')}
@@ -98,12 +98,12 @@ export default function ResultsPanel({
           </div>
         </div>
 
-        {results.crossProgramAlerts.en.length > 0 && (
+        {(results.crossProgramAlerts[language]?.length || 0) > 0 && (
           <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
             <h4 className="text-xs font-semibold text-emerald-400 mb-2">
               🔗 Cross-Program Alerts
             </h4>
-            {(isEn ? results.crossProgramAlerts.en : results.crossProgramAlerts.ur).map(
+            {(results.crossProgramAlerts[language] || results.crossProgramAlerts.ur || results.crossProgramAlerts.en || []).map(
               (alert, i) => (
                 <p key={i} className="text-xs text-sage-300 mb-1">
                   {alert}
@@ -125,7 +125,7 @@ export default function ResultsPanel({
 
         <div className="p-3 rounded-xl bg-gold-500/5 border border-gold-500/20">
           <p className="text-[11px] text-gold-400/80 leading-relaxed">
-            ⚠️ {isEn ? results.disclaimer.en : results.disclaimer.ur}
+            ⚠️ {results.disclaimer[language] || results.disclaimer.ur || results.disclaimer.en}
           </p>
         </div>
       </div>

@@ -42,10 +42,10 @@ export default function NearbyOffices({ province }: NearbyOfficesProps) {
                 <Icon className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-cream">
-                    {isEn ? office.name.en : office.name.ur}
+                    {language === 'en' ? office.name.en : (office.name.ur || office.name.en)}
                   </p>
                   <p className="text-xs text-sage-400 mt-0.5">
-                    {isEn ? office.address.en : office.address.ur}
+                    {language === 'en' ? office.address.en : (office.address.ur || office.address.en)}
                   </p>
                   {office.phone && (
                     <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
@@ -54,7 +54,7 @@ export default function NearbyOffices({ province }: NearbyOfficesProps) {
                   )}
                   {office.hours && (
                     <p className="text-[10px] text-sage-500 mt-0.5">
-                      {isEn ? office.hours.en : office.hours.ur}
+                      {language === 'en' ? office.hours.en : (office.hours.ur || office.hours.en)}
                     </p>
                   )}
                 </div>
