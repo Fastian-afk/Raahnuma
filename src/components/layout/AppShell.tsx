@@ -40,10 +40,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
 
   const THEMES = [
-    { code: 'emerald-dark' as const, nameKey: 'theme.emerald_dark', icon: Moon },
-    { code: 'emerald-light' as const, nameKey: 'theme.emerald_light', icon: Sun },
-    { code: 'royal-dark' as const, nameKey: 'theme.royal_dark', icon: Palette },
-    { code: 'slate-dark' as const, nameKey: 'theme.slate_dark', icon: Palette },
+    { code: 'slate-light' as const, nameKey: 'theme.slate_light', icon: Sun },
+    { code: 'slate-dark' as const, nameKey: 'theme.slate_dark', icon: Moon },
   ];
 
   return (

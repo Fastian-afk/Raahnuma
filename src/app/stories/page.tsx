@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import { useLanguage } from '@/lib/i18n/context';
 import { MultilingualText, MultilingualList, Language } from '@/lib/rules-engine/types';
-import { MapPin, Users, Briefcase, ArrowRight, CheckCircle2, ChevronRight, Heart } from 'lucide-react';
+import { MapPin, Users, Briefcase, ArrowRight, CheckCircle2, ChevronRight, Heart, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface ImpactStory {
   id: string;
   name: MultilingualText;
   province: MultilingualText;
-  avatar: string;
+  initials: string;
   situation: MultilingualText;
   before: MultilingualList;
   after: MultilingualList;
@@ -24,7 +24,7 @@ export const STORIES: ImpactStory[] = [
     id: 'amina',
     name: { en: 'Amina Bibi', ur: 'آمنہ بی بی', sd: 'آمنه بي بي', ps: 'امنه بي بي', pn: 'آمنہ بی بی', bl: 'آمنہ بی بی' },
     province: { en: 'Rural Sindh', ur: 'سندھ (دیہی)', sd: 'سندھ (ڳوٺاڻو)', ps: 'سندھ (کلي)', pn: 'سندھ (پینڈو)', bl: 'سندھ (دیہی)' },
-    avatar: '👩',
+    initials: 'AB',
     situation: {
       en: 'Amina is a pregnant mother living in a 6-person household in rural Sindh. Her husband is a daily-wage brick kiln laborer with highly unstable income. Amina was unaware of nutrition support programs and struggled to afford school expenses for her son in class 4.',
       ur: 'آمنہ ایک حاملہ ماں ہے جو دیہی سندھ میں 6 افراد کے خاندان کے ساتھ رہتی ہے۔ اس کا شوہر بھٹے پر کام کرنے والا دیہاڑی دار مزدور ہے۔ وہ بچوں کے تعلیمی اخراجات اور غذائی قلت کا شکار تھی۔',
@@ -92,7 +92,7 @@ export const STORIES: ImpactStory[] = [
       ps: [
         'د رهنما له لارې په څو دقیقو کې د ۴ پروګرامونو لپاره وړتیا معلومه کړه',
         'په نږدې دفتر کې د سروې ترسره کولو لاره ورته وښودل شوه',
-        'د روغتون له نشونما مرکز څخه یې وړیا تغذیوي توکي ترلاسه کړل'
+        'د روغتون له نشونما مرکز څخه یې وړیا تغذيوي توکي ترلاسه کړل'
       ],
       pn: [
         'راہنما نال 4 فلاحی پروگراماں لئی اہلیت دا پتہ چلیا',
@@ -120,7 +120,7 @@ export const STORIES: ImpactStory[] = [
     id: 'hassan',
     name: { en: 'Hassan Ali', ur: 'حسن علی', sd: 'حسن علي', ps: 'حسن علي', pn: 'حسن علی', bl: 'حسن علی' },
     province: { en: 'Punjab', ur: 'پنجاب', sd: 'پنجاب', ps: 'پنجاب', pn: 'پنجاب', bl: 'پنجاب' },
-    avatar: '👨',
+    initials: 'HA',
     situation: {
       en: 'Hassan is an unemployed factory worker in Lahore. After losing his job, he struggled to meet basic utility costs and buy essential medication for his wife, who suffers from a chronic respiratory illness.',
       ur: 'حسن لاہور کا رہائشی ہے جو فیکٹری بند ہونے کی وجہ سے بے روزگار ہو گیا تھا۔ وہ گھر کے راشن اور اپنی بیمار بیوی کے علاج کے اخراجات کی وجہ سے شدید پریشان تھا۔',
@@ -212,7 +212,7 @@ export const STORIES: ImpactStory[] = [
     id: 'bibi_zainab',
     name: { en: 'Bibi Zainab', ur: 'بی بی زینب', sd: 'بي بي زينب', ps: 'بي بي زينب', pn: 'بی بی زینب', bl: 'بی بی زینب' },
     province: { en: 'Khyber Pakhtunkhwa', ur: 'خیبرپختونخوا', sd: 'خيبر پختونخوا', ps: 'خيبر پښتونخوا', pn: 'خیبر پختونخوا', bl: 'خیبر پختونخوا' },
-    avatar: '👵',
+    initials: 'BZ',
     situation: {
       en: 'Bibi Zainab is a disabled widow supporting two school-going grandchildren in Peshawar. She has no stable source of household income and relies on neighbors for financial assistance.',
       ur: 'بی بی زینب پشاور کی رہائشی ایک معذور بیوہ ہیں جو اپنے دو اسکول جانے والے پوتوں کی سرپرستی کر رہی ہیں۔ ان کے پاس آمدنی کا کوئی مستقل ذریعہ نہیں تھا۔',
@@ -300,13 +300,13 @@ export const STORIES: ImpactStory[] = [
     id: 'fatima',
     name: { en: 'Fatima Jan', ur: 'فاطمہ جان', sd: 'فاطمه جان', ps: 'فاطمه جان', pn: 'فاطمہ جان', bl: 'فاطمہ جان' },
     province: { en: 'Balochistan', ur: 'بلوچستان', sd: 'بلوچستان', ps: 'بلوچستان', pn: 'بلوچستان', bl: 'بلوچستان' },
-    avatar: '👩‍🍼',
+    initials: 'FJ',
     situation: {
       en: 'Fatima is a young mother of an 8-month-old infant in rural Quetta. Her husband is a small-scale seasonal farmer. Fatima was struggling with maternal health issues and could not afford proper infant nutrition supplements.',
       ur: 'فاطمہ کوئٹہ کے دیہی علاقے کی رہائشی ہے اور 8 ماہ کے بچے کی ماں ہے۔ اس کا شوہر ایک چھوٹا کسان ہے۔ فاطمہ کو زچگی کے بعد صحت کے مسائل اور بچے کی خوراک کی پریشانی تھی۔',
       sd: 'فاطمه ڪوئيٽا جي ٻهراڙي واري علائقي جي رهواسي آهي ۽ 8 مهينن جي ٻار جي ماءُ آهي.',
       ps: 'فاطمه په کویټه کې د یو ۸ میاشتني ماشوم مور ده چې د زچګۍ روغتیايي ستونزې یې لرلې.',
-      pn: 'فاطمہ کوئٹہ دی رہن والی 8 مہینے دے بچے دی ماں اے، شوہر کسان اے۔',
+      pn: 'فاطمہ کوئٹہ دی رہن والی 8 مہینے دے بچے دی ماں اے, شوہر کسان اے۔',
       bl: 'فاطمہ کوئٹہ ءِ یک لوگے ءَ نشتگیں 8 ماہ ءِ چورگ ءِ مات انت۔ مرد کسانیں زارتے کنت۔'
     },
     before: {
@@ -353,9 +353,9 @@ export const STORIES: ImpactStory[] = [
         'تصدیق ہوئی کہ بلوچستان صحت کارڈ کے تحت کوئٹہ کے بڑے ہسپتالوں میں مفت داخل علاج کی سہولت موجود ہے'
       ],
       sd: [
-        'معلوم ڪيو ته سندس ٻار قريبي اسپتال مان مفت غذائي سپليمينٽ حاصل ڪري سگهي ٿو',
-        'نشونما تحت ٽماهي 2,000 رپيا اضافي رقم چيڪ ڪئي',
-        'بلوچستان ۾ صحت ڪارڊ جي فعال هجڻ جي تصديق ڪئي'
+        'معلوم ڪيائين ته سندس ٻار قريبي اسپتال مان مفت غذائي سپليمينٽ حاصل ڪري سگهي ٿو',
+        'نشونما تحت ٽماهي 2,000 رپيا اضافي رقم چيڪ ڪيائين',
+        'بلوچستان ۾ صحت ڪارڊ جي فعال هجڻ جي تصديق ڪيائين'
       ],
       ps: [
         'پوهه شوه چې ماشوم یې په نږدې روغتون کې د وړیا تغذیې حقدار دی',
@@ -388,7 +388,7 @@ export const STORIES: ImpactStory[] = [
     id: 'tariq',
     name: { en: 'Tariq Baloch', ur: 'طارق بلوچ', sd: 'طارق بلوچ', ps: 'طارق بلوچ', pn: 'طارق بلوچ', bl: 'طارق بلوچ' },
     province: { en: 'Rural Balochistan', ur: 'بلوچستان (دیہی)', sd: 'بلوچستان (ڳوٺاڻو)', ps: 'بلوچستان (کلي)', pn: 'بلوچستان (پینڈو)', bl: 'بلوچستان (دیہی)' },
-    avatar: '👨',
+    initials: 'TB',
     situation: {
       en: 'Tariq is a daily-wage agricultural farmer with 5 children. His eldest daughter has a physical disability. Tariq struggled to afford travel expenses to Quetta for NADRA registration and was unaware of disabled welfare thresholds.',
       ur: 'طارق ایک غریب کسان ہے جس کے 5 بچے ہیں۔ اس کی بڑی بیٹی معذور ہے۔ طارق کے پاس نادرا دفتر تک جانے کا کرایہ نہیں تھا اور وہ معذور افراد کے لیے مقرر کردہ آسان شرائط سے ناواقف تھا۔',
@@ -479,7 +479,7 @@ export const STORIES: ImpactStory[] = [
     id: 'sajida',
     name: { en: 'Sajida Bibi', ur: 'ساجدہ بی بی', sd: 'ساجده بي بي', ps: 'ساجده بي بي', pn: 'ساجدہ بی بی', bl: 'ساجدہ بی بی' },
     province: { en: 'Khyber Pakhtunkhwa', ur: 'خیبرپختونخوا', sd: 'خيبر پختونخوا', ps: 'خيبر پښتونخوا', pn: 'خیبر پختونخوا', bl: 'خیبر پختونخوا' },
-    avatar: '👩‍🍳',
+    initials: 'SB',
     situation: {
       en: 'Sajida is a widowed mother in Peshawar who earns a small income through home tailoring. She has an infant baby (12 months) and a daughter in high school. Sajida had no inheritance or financial support after her husband\'s demise.',
       ur: 'ساجدہ پشاور کی رہائشی بیوہ ہیں جو سلائی کڑھائی کر کے قلیل آمدنی کماتی ہیں۔ ان کا ایک 12 ماہ کا بچہ اور ایک بیٹی ہائی اسکول میں پڑھتی ہے۔ ساجدہ کے پاس کوئی مدد نہیں تھی۔',
@@ -534,7 +534,7 @@ export const STORIES: ImpactStory[] = [
         'ایمرجنسی کی صورت میں ہسپتال میں صحت کارڈ کے ذریعے خاندان کا مفت علاج کروایا'
       ],
       sd: [
-        'معلوم ڪيو ته Kafaalat مالي مدد لاءِ ڪنهن سفارش جي ضرورت ناهي',
+        'معلوم ڪيائين ته Kafaalat مالي مدد لاءِ ڪنهن سفارش جي ضرورت ناهي',
         'ڌي لاءِ ٽماهي 4,000 رپيا وظيفو فعال ڪرايائين',
         'ٻار لاءِ نشونما مرڪز مان مفت راشن حاصل ڪيائين'
       ],
@@ -597,7 +597,9 @@ export default function StoriesPage() {
               className={`flex items-center gap-3 px-5 py-3 rounded-xl shrink-0 transition-all ${
                 i === activeStory ? 'bg-gold-500/15 border border-gold-500/30 text-cream' : 'glass text-sage-500 hover:text-cream'
               }`}>
-              <span className="text-2xl">{s.avatar}</span>
+              <div className="w-10 h-10 rounded-xl bg-gold-500/15 text-gold-400 flex items-center justify-center font-bold text-sm shrink-0 border border-gold-500/10">
+                {s.initials}
+              </div>
               <div className="text-left">
                 <div className="text-sm font-bold">{getTranslation(s.name)}</div>
                 <div className="text-[10px] text-sage-500">{getTranslation(s.province)}</div>
@@ -611,14 +613,16 @@ export default function StoriesPage() {
           {/* Profile card */}
           <div className="glass rounded-2xl p-6 mb-8" style={{ borderColor: `${story.color}30` }}>
             <div className="flex items-center gap-4 mb-4">
-              <div className="text-5xl">{story.avatar}</div>
+              <div className="w-16 h-16 rounded-2xl bg-gold-500/10 text-gold-400 flex items-center justify-center font-bold text-xl shrink-0 border border-gold-500/20 shadow-lg">
+                {story.initials}
+              </div>
               <div>
                 <h2 className="text-2xl font-bold text-cream">
                   {getTranslation(story.name)} 
                   <span className="text-sage-500 text-lg font-normal"> ({story.name.ur})</span>
                 </h2>
                 <div className="flex items-center gap-4 mt-1 text-sm text-sage-400">
-                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {getTranslation(story.province)}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-gold-400" /> {getTranslation(story.province)}</span>
                 </div>
               </div>
             </div>
@@ -637,7 +641,8 @@ export default function StoriesPage() {
               <ul className="space-y-3">
                 {getTranslationList(story.before).map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-sage-400">
-                    <span className="text-rose-400">✗</span> {item}
+                    <X className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -647,7 +652,8 @@ export default function StoriesPage() {
               <ul className="space-y-3">
                 {getTranslationList(story.after).map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-sage-400">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" /> {item}
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -658,7 +664,7 @@ export default function StoriesPage() {
           <div className="glass-gold rounded-2xl p-6 text-center">
             <p className="text-sm text-sage-400 mb-2">{t('stories.potential')}</p>
             <p className="text-3xl font-bold text-gradient-gold">{getTranslation(story.potentialBenefit)}</p>
-            <Link href="/navigator" className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-sm hover:from-gold-500 hover:to-gold-400 transition-all">
+            <Link href="/navigator" className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl bg-gradient-to-r from-gold-600 to-gold-500 text-emerald-950 font-bold text-sm hover:from-gold-500 hover:to-gold-400 transition-all cursor-pointer">
               {t('hero.cta.chat')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

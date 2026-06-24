@@ -9,7 +9,7 @@ import {
   Compass, ArrowRight, MessageCircle, Brain, ClipboardCheck,
   Banknote, GraduationCap, HeartPulse, ShieldPlus, Package,
   Globe, Mic, FileSearch, Users, Sparkles, ChevronRight,
-  MapPin, CheckCircle2
+  MapPin, CheckCircle2, X
 } from 'lucide-react';
 
 function AnimatedCounter({ end, suffix = '', prefix = '' }: { end: number; suffix?: string; prefix?: string }) {
@@ -313,11 +313,14 @@ export default function HomePage() {
               {/* Before */}
               <div className="rounded-2xl p-8 border border-rose-500/20 bg-rose-500/5">
                 <div className="text-sm font-bold text-rose-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                  <span className="text-rose-400 font-bold">✗</span> {t('stories.before')}
+                  <X className="w-4 h-4 text-rose-500 shrink-0" /> {t('stories.before')}
                 </div>
                 <div className="space-y-3 text-sm text-sage-400">
                   {getTranslationList(STORIES[0].before).map((point, idx) => (
-                    <p key={idx}>❌ {point}</p>
+                    <div key={idx} className="flex items-start gap-2">
+                      <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                      <p>{point}</p>
+                    </div>
                   ))}
                   <p className="text-rose-300 font-medium pt-2">{t('impact.before_summary')}</p>
                 </div>
@@ -325,11 +328,14 @@ export default function HomePage() {
               {/* After */}
               <div className="rounded-2xl p-8 border border-emerald-500/20 bg-emerald-500/5">
                 <div className="text-sm font-bold text-emerald-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t('stories.after')}
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> {t('stories.after')}
                 </div>
                 <div className="space-y-3 text-sm text-sage-400">
                   {getTranslationList(STORIES[0].after).map((point, idx) => (
-                    <p key={idx}>✅ {point}</p>
+                    <div key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <p>{point}</p>
+                    </div>
                   ))}
                   <p className="text-emerald-300 font-medium pt-2">{t('impact.after_summary')}</p>
                 </div>
