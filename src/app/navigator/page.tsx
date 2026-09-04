@@ -373,7 +373,7 @@ export default function NavigatorPage() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: `📎 ${t('upload.title') || 'Uploaded Document'}: ${file.name}`,
+        content: `${t('upload.title') || 'Uploaded Document'}: ${file.name}`,
         timestamp: new Date(),
       },
     ]);

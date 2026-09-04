@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'emerald-dark' | 'emerald-light' | 'royal-dark' | 'slate-dark';
+export type Theme = 'slate-light' | 'slate-dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,26 +11,24 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('emerald-dark');
+  const [theme, setThemeState] = useState<Theme>('slate-light');
 
   useEffect(() => {
     const saved = localStorage.getItem('raahnuma-theme') as Theme;
-    if (saved && ['emerald-dark', 'emerald-light', 'royal-dark', 'slate-dark'].includes(saved)) {
+    if (saved && ['slate-light', 'slate-dark'].includes(saved)) {
       setThemeState(saved);
       applyTheme(saved);
+    } else {
+      applyTheme('slate-light');
     }
   }, []);
 
   const applyTheme = (t: Theme) => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    root.classList.remove('theme-light', 'theme-royal', 'theme-slate');
-    if (t === 'emerald-light') {
-      root.classList.add('theme-light');
-    } else if (t === 'royal-dark') {
-      root.classList.add('theme-royal');
-    } else if (t === 'slate-dark') {
-      root.classList.add('theme-slate');
+    root.classList.remove('theme-dark');
+    if (t === 'slate-dark') {
+      root.classList.add('theme-dark');
     }
   };
 
